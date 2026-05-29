@@ -36,6 +36,29 @@
 - `AboutPage`
   - 汇总当前工程实现范围和说明。
 
+## 快速开始
+
+### 环境准备
+
+- 安装 `DevEco Studio`
+- 安装与工程兼容的 `HarmonyOS SDK`
+- 准备可用的模拟器或真机
+
+### 本地运行
+
+1. 克隆仓库到本地。
+2. 使用 DevEco Studio 打开工程目录。
+3. 在本地创建并配置 `build-profile.json5`，填入自己的签名配置。
+4. 执行 Sync / Build。
+5. 运行到模拟器或真机，进入首页后按页面入口查看 `SegmentMap`、`RectPartition` 和 `DSP` 说明。
+
+### 建议体验路径
+
+1. 先进入 `RectanglePartitionPage`，查看官方样例与规则网格样例。
+2. 再测试规则网格的随机矩形生成、执行划分和结果来源说明。
+3. 然后进入 `SegmentTreePage`，观察区间更新和区间查询结果。
+4. 最后查看 `AboutPage`，理解当前工程能力边界和限制。
+
 ## 矩形划分页面能力
 
 `RectanglePartitionPage` 目前支持以下能力：
@@ -96,6 +119,7 @@
 
 - `build-profile.json5` 包含本机签名材料路径和密码，不应提交到公开仓库。
 - 首次拉取工程后，请在本地自行创建并配置 `build-profile.json5`，再使用 DevEco Studio 或 hvigor 构建。
+- 如果缺少本地签名配置，工程源码仍可正常阅读，但无法直接完成安装与运行。
 
 ## 当前限制
 
