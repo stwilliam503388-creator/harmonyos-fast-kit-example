@@ -1,0 +1,9 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/SegmentTreePage",
+    "pages/RectanglePartitionPage",
+    "pages/DspDemoPage",
+    "pages/AboutPage"
+  ]
+}

@@ -1,0 +1,114 @@
+# FAST Kit Example
+
+这是一个基于 HarmonyOS `FAST Kit` 真实能力边界搭建的示例工程，目标不是做一个通用 UI Demo，而是把当前设备和 SDK 条件下可验证的 `FAST SegmentMap` 与 `FAST RectPartition` 能力真正接入到 HarmonyOS 应用中，并通过页面把输入、输出和结果解释展示出来。
+
+## 文档依据
+
+本工程的设计和说明，主要基于以下 FAST Kit 文档语义：
+
+- `FAST_Rect`
+  - 矩形表示二维网格内满足坐标条件的所有单元矩形集合。
+  - 坐标系中 `X` 轴从左到右递增，`Y` 轴从上到下递增。
+  - 输入坐标格式为 `[left, top, right, bottom]`。
+- `FAST RectPartition`
+  - 输入为若干矩形区域，输出为划分后的合法矩形集合。
+  - native 返回结果是合法划分结果，但不保证一定是全局最少矩形数。
+- `FAST SegmentMap`
+  - 用于区间更新与区间查询。
+
+## 当前应用
+
+当前应用包含以下页面：
+
+- `Index`
+  - 展示 FAST Kit 示例工程入口与环境状态。
+- `SegmentTreePage`
+  - 通过 Native NAPI 桥接 `FAST SegmentMap`。
+  - 演示默认数组上的区间查询与区间更新。
+- `RectanglePartitionPage`
+  - 通过 Native NAPI 桥接 `FAST RectPartition`。
+  - 展示原始矩形、执行划分后的输出矩形、坐标列表与结果来源。
+  - 支持官方样例和规则网格样例。
+  - 规则网格支持随机生成输入矩形。
+- `DspDemoPage`
+  - 保留 FAST Kit DSP 页面入口。
+  - 当前 SDK 未发现对应 Native 头文件，因此展示受限说明。
+- `AboutPage`
+  - 汇总当前工程实现范围和说明。
+
+## 矩形划分页面能力
+
+`RectanglePartitionPage` 目前支持以下能力：
+
+- 官方样例
+  - 用于核对基础输入、坐标语义与 native 返回结果。
+- 规则网格样例
+  - 用于验证原始区域绘制、执行划分后的结果展示，以及随机样例输入。
+- 随机生成
+  - 数量范围支持 `4-15`。
+  - 随机矩形整体逻辑坐标范围固定在 `8 x 8` 内。
+  - 生成矩形互不重叠。
+  - 至少保证存在相邻贴边矩形，并尽量让相邻矩形更多。
+- 结果展示
+  - 原始区域展示输入坐标与矩形画布。
+  - 优化结果展示输出坐标与矩形画布。
+  - 页面明确标识结果来源，例如 `FAST Native 实际输出` 或本地预览兜底。
+
+## Native 接入方式
+
+当前工程通过 NAPI + 动态加载方式接入 FAST Kit：
+
+- `entry/src/main/cpp/napi_init.cpp`
+  - 动态加载 `libfast_ads.so` 与 `libfast_solver.so`
+  - 封装 `FAST SegmentMap` 与 `FAST RectPartition` 调用
+- `entry/src/main/ets/native/FastKitService.ets`
+  - 提供 ArkTS 侧服务封装
+  - 提供样例数据、随机生成逻辑与兜底预览逻辑
+
+### RectPartition 调用链
+
+- ArkTS 将输入矩形转换为 `[left, top, right, bottom]` 数组
+- NAPI 将数组转换为 `FAST_Rect`
+- native 调用：
+  - `HMS_FAST_RectPartition_CreateConfig`
+  - `HMS_FAST_RectPartition_SetAlgo(config, "SweepLineAlgo")`
+  - `HMS_FAST_RectPartition_Solve`
+
+根据当前 SDK 头文件说明：
+
+- 当前仅支持 `"SweepLineAlgo"`
+- 即使不显式设置，默认算法也是 `"SweepLineAlgo"`
+
+## 工程结构
+
+- `AppScope/`
+  - 应用级配置与资源
+- `entry/`
+  - ArkTS 页面、Ability、Native 代码与资源
+- `entry/src/main/cpp/`
+  - `napi_init.cpp`：FAST Kit 动态加载与 Native 封装
+- `entry/src/main/ets/native/`
+  - `FastKitService.ets`：ArkTS 服务层与样例逻辑
+- `entry/src/main/ets/pages/`
+  - 首页、线段表、矩形划分、DSP、关于页
+
+## 本地配置说明
+
+- `build-profile.json5` 包含本机签名材料路径和密码，不应提交到公开仓库。
+- 首次拉取工程后，请在本地自行创建并配置 `build-profile.json5`，再使用 DevEco Studio 或 hvigor 构建。
+
+## 当前限制
+
+1. 当前 Native 层使用 `dlopen/dlsym` 动态加载 FAST Kit 库，优先保证工程可构建、可运行。
+2. 若设备环境未暴露 `libfast_ads.so` 或 `libfast_solver.so`，页面会显示受限说明或本地预览结果，而不是伪造 native 成功。
+3. FAST DSP 能力在当前本机 SDK 中未发现对应 Native 头文件，因此页面只展示说明，不做真实调用。
+4. `RectanglePartitionPage` 中的随机样例是为了方便观察坐标与结果，不代表官方文档提供的标准测试集。
+
+## 已知案例
+
+- `FAST RectPartition` 的 native 输出是合法划分结果，但不保证一定是“全局最少矩形数”。
+- 已记录测试用例：
+  - 输入：`3,1,4,2;5,1,6,2;3,3,4,4;5,3,6,4;7,3,8,4;3,5,4,5;5,5,6,5;7,5,8,6`
+  - 当前 `FAST Native 实际输出` 可能为 `4` 个矩形
+  - 从离散网格覆盖角度看，该输入可以进一步收敛为 `2` 个矩形：`[3,1,6,5]` 与 `[7,3,8,6]`
+- 这个案例用于提醒：页面展示的是 FAST Kit 当前 native 返回值，不额外强制做“全局最优矩形数”的二次优化。

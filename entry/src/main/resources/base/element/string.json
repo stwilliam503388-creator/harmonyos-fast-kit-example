@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "FAST Kit 示例模块"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "FAST Kit 示例应用入口"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "FAST Kit 示例"
+    }
+  ]
+}

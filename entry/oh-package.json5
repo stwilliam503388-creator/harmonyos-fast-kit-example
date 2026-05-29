@@ -1,0 +1,11 @@
+{
+  "name": "entry",
+  "version": "1.0.0",
+  "description": "FAST Kit demo entry module.",
+  "main": "",
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "libfastkit.so": "file:./src/main/cpp/types/libfastkit"
+  }
+}
