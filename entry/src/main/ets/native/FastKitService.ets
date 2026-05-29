@@ -89,48 +89,10 @@ export class FastKitService {
     { left: 1, top: 1, right: 6, bottom: 6 },
     { left: 7, top: 1, right: 8, bottom: 6 }
   ];
-  static readonly IRREGULAR_RECTANGLES: RectItem[] = [
-    { left: 1, top: 1, right: 3, bottom: 2 },
-    { left: 4, top: 1, right: 6, bottom: 2 },
-    { left: 7, top: 1, right: 9, bottom: 3 },
-    { left: 1, top: 3, right: 2, bottom: 5 },
-    { left: 3, top: 3, right: 6, bottom: 5 },
-    { left: 7, top: 4, right: 9, bottom: 5 },
-    { left: 1, top: 6, right: 4, bottom: 7 },
-    { left: 5, top: 6, right: 6, bottom: 7 },
-    { left: 7, top: 6, right: 9, bottom: 7 }
-  ];
-  static readonly IRREGULAR_EXPECTED_RECTANGLES: RectItem[] = [
-    { left: 1, top: 1, right: 6, bottom: 5 },
-    { left: 7, top: 1, right: 9, bottom: 5 },
-    { left: 1, top: 6, right: 9, bottom: 7 }
-  ];
-  static readonly LARGE_RECTANGLES: RectItem[] = [
-    { left: 1, top: 1, right: 2, bottom: 2 },
-    { left: 3, top: 1, right: 4, bottom: 2 },
-    { left: 5, top: 1, right: 6, bottom: 2 },
-    { left: 7, top: 1, right: 8, bottom: 2 },
-    { left: 10, top: 1, right: 11, bottom: 2 },
-    { left: 1, top: 3, right: 2, bottom: 4 },
-    { left: 3, top: 3, right: 4, bottom: 4 },
-    { left: 5, top: 3, right: 6, bottom: 4 },
-    { left: 7, top: 3, right: 8, bottom: 4 },
-    { left: 10, top: 3, right: 11, bottom: 4 },
-    { left: 1, top: 5, right: 3, bottom: 7 },
-    { left: 4, top: 5, right: 6, bottom: 7 },
-    { left: 7, top: 5, right: 8, bottom: 7 },
-    { left: 10, top: 5, right: 11, bottom: 7 },
-    { left: 1, top: 8, right: 5, bottom: 9 },
-    { left: 6, top: 8, right: 8, bottom: 9 },
-    { left: 10, top: 8, right: 11, bottom: 9 }
-  ];
-  static readonly LARGE_EXPECTED_RECTANGLES: RectItem[] = [
-    { left: 1, top: 1, right: 8, bottom: 9 },
-    { left: 10, top: 1, right: 11, bottom: 9 }
-  ];
   static readonly DEFAULT_RECTANGLES: RectItem[] = FastKitService.OFFICIAL_DOC_RECTANGLES;
 
   static getRectSampleSets(): RectSampleSet[] {
+    // 当前页面只保留官方样例和规则网格，避免历史样例继续干扰验证结果。
     return [
       {
         key: 'official',
@@ -153,14 +115,14 @@ export class FastKitService {
     try {
       return nativeFastKit.getEnvironmentStatus() as FastKitEnvironmentStatus;
     } catch (error) {
-      const message: string = `Native bridge load failed: ${JSON.stringify(error)}`;
+      const message: string = `Native 桥接层加载失败：${JSON.stringify(error)}`;
       return {
         segmentMapAvailable: false,
         segmentMapMessage: message,
         rectPartitionAvailable: false,
         rectPartitionMessage: message,
         dspAvailable: false,
-        dspMessage: 'Current SDK does not expose FAST DSP headers.'
+        dspMessage: '当前 SDK 未暴露 FAST DSP 相关头文件。'
       };
     }
   }
@@ -169,6 +131,7 @@ export class FastKitService {
     updateLeft: number, updateRight: number, updateValue: number, queryLeft: number,
     queryRight: number): SegmentMapResult {
     try {
+      // SegmentMap 页面会把查询类型、更新类型和区间参数直接透传到 Native。
       return nativeFastKit.runSegmentMapDemo(input, queryType, updateType, updateLeft, updateRight,
         updateValue, queryLeft, queryRight) as SegmentMapResult;
     } catch (error) {
@@ -176,7 +139,7 @@ export class FastKitService {
         success: false,
         available: false,
         code: -1,
-        message: `Native call failed: ${JSON.stringify(error)}`,
+        message: `Native 调用失败：${JSON.stringify(error)}`,
         beforeQuery: 0,
         afterQuery: 0
       };
@@ -195,7 +158,7 @@ export class FastKitService {
         success: false,
         available: false,
         code: -1,
-        message: `Native call failed: ${JSON.stringify(error)}`,
+        message: `Native 调用失败：${JSON.stringify(error)}`,
         inputCount: rects.length,
         outputCount: 0,
         optimizedRects: []
@@ -204,6 +167,7 @@ export class FastKitService {
   }
 
   static parseNumberList(text: string): number[] {
+    // 允许用户输入中存在空格或空片段，只提取能成功转成数字的内容。
     let parts: string[] = text.split(',');
     let result: number[] = [];
     parts.forEach((item: string) => {
@@ -216,6 +180,7 @@ export class FastKitService {
   }
 
   static parseRectList(text: string): RectItem[] {
+    // 页面约定的输入格式为 left,top,right,bottom;left,top,right,bottom;...
     let items: RectItem[] = [];
     text.split(';').forEach((item: string) => {
       let values: number[] = FastKitService.parseNumberList(item);
@@ -232,6 +197,7 @@ export class FastKitService {
   }
 
   static rectListToText(rects: RectItem[]): string {
+    // 把矩形数组回写成页面输入框可直接复用的文本格式。
     return rects.map((item: RectItem): string => {
       return `${item.left},${item.top},${item.right},${item.bottom}`;
     }).join(';');
@@ -538,6 +504,7 @@ export class FastKitService {
 
   static applySegmentPreviewUpdate(input: number[], updateType: number,
     left: number, right: number, value: number): number[] {
+    // 这里只做前端数组预览，帮助用户理解更新后的期望效果，不参与 Native 真实计算。
     let next: number[] = input.slice();
     for (let index = left; index < right && index < next.length; index++) {
       if (updateType === 0) {

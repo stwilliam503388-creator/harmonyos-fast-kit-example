@@ -4,6 +4,7 @@ import FastKitService, { FastKitEnvironmentStatus } from '../native/FastKitServi
 @Entry
 @Component
 struct AboutPage {
+  // 关于页用于汇总工程定位、当前能力边界和后续扩展方向。
   @State envStatus: FastKitEnvironmentStatus = FastKitService.getEnvironmentStatus();
 
   aboutToAppear(): void {

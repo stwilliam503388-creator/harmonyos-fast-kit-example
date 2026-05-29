@@ -26,6 +26,7 @@ interface DrawRectSpec {
 @Entry
 @Component
 struct RectanglePartitionPage {
+  // 这页重点解决三件事：解释 FAST_Rect 语义、展示 Native 输出、把结果稳定绘制到画布上。
   private readonly previewWidth: number = 320;
   private readonly previewHeight: number = 240;
   private readonly previewPadding: number = 8;

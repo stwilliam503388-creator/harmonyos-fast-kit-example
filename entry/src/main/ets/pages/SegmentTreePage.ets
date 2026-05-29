@@ -4,6 +4,7 @@ import FastKitService, { FastKitEnvironmentStatus, SegmentMapResult } from '../n
 @Entry
 @Component
 struct SegmentTreePage {
+  // 这页聚焦演示 SegmentMap 的一次“查询 -> 更新 -> 再查询”闭环。
   @State envStatus: FastKitEnvironmentStatus = FastKitService.getEnvironmentStatus();
   @State dataText: string = FastKitService.DEFAULT_SEGMENT_DATA.join(',');
   @State queryType: number = 0;
@@ -74,6 +75,7 @@ struct SegmentTreePage {
       return;
     }
 
+    // 页面结果区同时展示 Native 返回值和前端预览数组，方便理解更新含义。
     let result: SegmentMapResult = FastKitService.runSegmentMapDemo(input, this.queryType, this.updateType,
       updateLeft, updateRight, updateValue, queryLeft, queryRight);
 

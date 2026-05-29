@@ -4,6 +4,7 @@ import FastKitService, { FastKitEnvironmentStatus } from '../native/FastKitServi
 @Entry
 @Component
 struct Index {
+  // 首页承担“环境检查 + 能力入口”两个职责，帮助开发者先确认可用性再进入具体页面。
   @State envStatus: FastKitEnvironmentStatus = FastKitService.getEnvironmentStatus();
 
   aboutToAppear(): void {

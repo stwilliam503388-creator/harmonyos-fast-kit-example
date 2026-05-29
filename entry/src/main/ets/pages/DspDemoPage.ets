@@ -4,6 +4,7 @@ import FastKitService, { FastKitEnvironmentStatus } from '../native/FastKitServi
 @Entry
 @Component
 struct DspDemoPage {
+  // DSP 页面当前以“能力说明页”为主，避免在 SDK 不完整时伪造可运行演示。
   @State envStatus: FastKitEnvironmentStatus = FastKitService.getEnvironmentStatus();
   @State sampleInput: string = '0.10,0.60,0.15,0.92,0.30,0.81,0.22,0.45';
 
