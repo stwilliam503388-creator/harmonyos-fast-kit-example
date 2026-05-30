@@ -44,6 +44,7 @@ struct SegmentTreePage {
   }
 
   private resetDemo(): void {
+    // 恢复成默认样例后，开发者可以稳定复现 README 里描述的 FAST SegmentMap 演示流程。
     this.dataText = FastKitService.DEFAULT_SEGMENT_DATA.join(',');
     this.queryType = 0;
     this.updateType = 1;
@@ -59,6 +60,7 @@ struct SegmentTreePage {
   }
 
   private runDemo(): void {
+    // 这里的输入格式和查询/更新参数，直接对应 FAST SegmentMap Native 接口所需参数。
     let input: number[] = FastKitService.parseNumberList(this.dataText);
     let updateLeft: number = Number(this.updateLeftText);
     let updateRight: number = Number(this.updateRightText);
@@ -81,6 +83,7 @@ struct SegmentTreePage {
 
     this.beforeResult = `${result.beforeQuery}`;
     this.afterResult = `${result.afterQuery}`;
+    // previewArray 是前端辅助理解用，不替代 Native 真正的执行结果。
     this.previewArray = FastKitService.applySegmentPreviewUpdate(input, this.updateType,
       updateLeft, updateRight, updateValue).join(', ');
     this.statusText = result.message;

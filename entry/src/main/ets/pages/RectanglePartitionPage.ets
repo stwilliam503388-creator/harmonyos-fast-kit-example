@@ -27,6 +27,7 @@ interface DrawRectSpec {
 @Component
 struct RectanglePartitionPage {
   // 这页重点解决三件事：解释 FAST_Rect 语义、展示 Native 输出、把结果稳定绘制到画布上。
+  // 其中真正调用 FAST Kit 的入口只有 runDemo()，其余大部分代码都在服务于“如何把结果解释清楚”。
   private readonly previewWidth: number = 320;
   private readonly previewHeight: number = 240;
   private readonly previewPadding: number = 8;
@@ -156,6 +157,7 @@ struct RectanglePartitionPage {
   }
 
   private runDemo(): void {
+    // 用户输入先在 ArkTS 层解析成 RectItem[]，再通过 FastKitService 交给 Native 层。
     let origin: RectItem[] = FastKitService.parseRectList(this.rectText);
     if (origin.length === 0) {
       this.statusText = '请按 left,top,right,bottom;... 的格式输入矩形。';
@@ -186,6 +188,7 @@ struct RectanglePartitionPage {
       this.statusText = `${result.message} 输入 ${result.inputCount} 个矩形，输出 ${result.outputCount} 个矩形。`;
     } else {
       if (this.expectedRects.length > 0) {
+        // 官方样例在 Native 不可用时优先回退到文档期望值，方便做语义对照。
         this.resultRects = this.expectedRects.slice();
         this.resultDrawSpecs = this.buildDrawSpecs(this.expectedRects, this.expectedRects,
           `result-grid-${this.resultRenderToken + 1}`);
@@ -195,6 +198,7 @@ struct RectanglePartitionPage {
         this.statusText =
           `${result.message} 当前环境未取得 FAST Native 输出，页面按官方文档期望结果展示，用于校对样例。`;
       } else {
+        // 规则网格等非官方样例没有固定标准答案时，再退回到页面本地预览算法。
         this.resultRects = fallbackRects.slice();
         this.resultDrawSpecs = this.buildDrawSpecs(fallbackRects, fallbackRects, `result-grid-${this.resultRenderToken + 1}`);
         this.outputCount = fallbackRects.length;

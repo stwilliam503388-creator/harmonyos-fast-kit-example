@@ -62,6 +62,10 @@ interface FrontierScore {
 }
 
 export class FastKitService {
+  // FastKitService 统一封装 ArkTS 侧对 FAST Kit 的使用方式：
+  // 1. 查询 Native 能力是否可用
+  // 2. 调用 SegmentMap / RectPartition
+  // 3. 提供页面需要的样例、解析和本地预览逻辑
   static readonly DEFAULT_SEGMENT_DATA: number[] = [2, 1, 3, 4, 5, 6, 7, 8];
   // 官方样例按文档原样保留，便于直接核对输入坐标和输出结果。
   static readonly OFFICIAL_DOC_RECTANGLES: RectItem[] = [
@@ -113,6 +117,7 @@ export class FastKitService {
 
   static getEnvironmentStatus(): FastKitEnvironmentStatus {
     try {
+      // 所有页面都先看环境状态，再决定是展示真实结果还是受限说明。
       return nativeFastKit.getEnvironmentStatus() as FastKitEnvironmentStatus;
     } catch (error) {
       const message: string = `Native 桥接层加载失败：${JSON.stringify(error)}`;
@@ -204,6 +209,7 @@ export class FastKitService {
   }
 
   static generateRandomGridRectangles(count: number): RectItem[] {
+    // 规则网格随机样例不是 FAST Kit 的官方能力，而是为了更方便地验证 RectPartition 页面。
     let normalizedCount: number = Math.max(4, Math.min(15, Math.floor(count)));
     // 固定槽位用于把随机矩形严格限制在 8x8 的逻辑画布内。
     let slots: RectSlot[] = [
@@ -446,6 +452,7 @@ export class FastKitService {
     }
 
     // 这里只是页面预览用的轻量合并算法，不代表 FAST Native 的全局最优结果。
+    // 它的作用是：当 Native 结果不可用时，页面仍能展示一个近似结果帮助理解输入覆盖范围。
     let xCoords: number[] = [];
     rects.forEach((item: RectItem) => {
       xCoords.push(item.left);

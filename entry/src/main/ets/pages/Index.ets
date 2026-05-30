@@ -26,6 +26,7 @@ struct Index {
           .width('100%')
 
         Column({ space: 8 }) {
+          // 环境检查不是摆设，它直接对应 Native 层是否成功加载 FAST Kit 符号。
           Text('环境检查')
             .fontSize(20)
             .fontWeight(FontWeight.Medium)
@@ -52,6 +53,7 @@ struct Index {
             .width('100%')
 
           Column({ space: 8 }) {
+            // SegmentTreePage 演示的是 FAST SegmentMap 的典型“查-改-再查”使用方式。
             Text('线段表演示')
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
@@ -72,6 +74,7 @@ struct Index {
           .borderRadius(16)
 
           Column({ space: 8 }) {
+            // RectanglePartitionPage 会把输入矩形、输出矩形和结果来源一起展示出来。
             Text('矩形划分演示')
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
@@ -92,6 +95,7 @@ struct Index {
           .borderRadius(16)
 
           Column({ space: 8 }) {
+            // DSP 当前还是能力说明页，用来明确告知“文档提到但本机 SDK 还未完整暴露”的状态。
             Text('DSP 演示说明')
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
