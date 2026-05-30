@@ -4,6 +4,7 @@ import FastKitService, { FastKitEnvironmentStatus } from '../native/FastKitServi
 @Entry
 @Component
 struct DspDemoPage {
+  // DSP 页面当前以“能力说明页”为主，避免在 SDK 不完整时伪造可运行演示。
   @State envStatus: FastKitEnvironmentStatus = FastKitService.getEnvironmentStatus();
   @State sampleInput: string = '0.10,0.60,0.15,0.92,0.30,0.81,0.22,0.45';
 
@@ -30,6 +31,7 @@ struct DspDemoPage {
           .width('100%')
 
         Column({ space: 8 }) {
+          // 这里明确展示 DSP 为什么还没接入，避免开发者误以为当前工程遗漏了实现。
           Text('当前状态')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
@@ -48,6 +50,7 @@ struct DspDemoPage {
         .borderRadius(16)
 
         Column({ space: 8 }) {
+          // 这部分保留未来接入 FAST DSP 时预期的页面结构，便于后续继续扩展。
           Text('计划中的 DSP 页面结构')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)

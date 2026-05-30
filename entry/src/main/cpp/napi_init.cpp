@@ -9,6 +9,12 @@
 
 namespace {
 
+// 这个文件是 ArkTS 与 FAST Kit Native 能力之间的唯一桥接层。
+// 当前工程通过 NAPI 暴露两个能力：
+// 1. FAST SegmentMap：区间查询 + 区间更新
+// 2. FAST RectPartition：矩形划分
+// DSP 暂未接入，因为当前本机 SDK 未发现对应头文件和可用符号。
+
 using SegmentCreateConfigFn = FAST_ErrorCode (*)(FAST_SegmentMapConfig**);
 using SegmentDestroyConfigFn = void (*)(FAST_SegmentMapConfig*);
 using SegmentSetQueryTypeFn = FAST_ErrorCode (*)(FAST_SegmentMapConfig*, FAST_SegmentMapQueryType);
@@ -67,6 +73,7 @@ SegmentApi LoadSegmentApi()
 {
     SegmentApi api;
     dlerror();
+    // SegmentMap 位于 libfast_ads.so，运行时再加载可避免构建期直接依赖失败。
     api.lib = dlopen("libfast_ads.so", RTLD_LAZY);
     if (api.lib == nullptr) {
         api.error = std::string("dlopen libfast_ads.so failed: ") + DlErrorString();
@@ -94,6 +101,7 @@ RectApi LoadRectApi()
 {
     RectApi api;
     dlerror();
+    // RectPartition 位于 libfast_solver.so，和页面中的矩形划分演示一一对应。
     api.lib = dlopen("libfast_solver.so", RTLD_LAZY);
     if (api.lib == nullptr) {
         api.error = std::string("dlopen libfast_solver.so failed: ") + DlErrorString();
@@ -141,6 +149,7 @@ void SetNamedValue(napi_env env, napi_value object, const char* key, napi_value 
 
 napi_value CreateEnvironmentStatus(napi_env env)
 {
+    // 首页和各演示页先调用这里，判断当前设备是否真的能拿到 FAST Kit 符号。
     SegmentApi segmentApi = LoadSegmentApi();
     RectApi rectApi = LoadRectApi();
 
@@ -167,6 +176,7 @@ napi_value CreateEnvironmentStatus(napi_env env)
 
 bool GetIntArray(napi_env env, napi_value value, std::vector<int32_t>& output, std::string& error)
 {
+    // SegmentMap 页面把数组输入作为 number[] 传入，这里做最基础的类型校验。
     bool isArray = false;
     napi_is_array(env, value, &isArray);
     if (!isArray) {
@@ -243,6 +253,7 @@ bool GetRectArray(napi_env env, napi_value value, std::vector<FAST_Rect>& output
 napi_value CreateSegmentResult(napi_env env, bool success, bool available, FAST_ErrorCode code,
     const std::string& message, int32_t beforeQuery, int32_t afterQuery)
 {
+    // ArkTS 页面除了 success/code/message 外，还会直接读取更新前后的查询结果。
     napi_value result = nullptr;
     napi_create_object(env, &result);
     SetNamedValue(env, result, "success", CreateBool(env, success));
@@ -257,6 +268,7 @@ napi_value CreateSegmentResult(napi_env env, bool success, bool available, FAST_
 napi_value CreateRectResult(napi_env env, bool success, bool available, FAST_ErrorCode code,
     const std::string& message, size_t inputCount, size_t outputCount, const std::vector<FAST_Rect>& outputRects)
 {
+    // 矩形划分页依赖 optimizedRects 来回绘画布，所以这里必须把结果完整回传给 ArkTS。
     napi_value result = nullptr;
     napi_create_object(env, &result);
     SetNamedValue(env, result, "success", CreateBool(env, success));
@@ -289,6 +301,8 @@ napi_value GetEnvironmentStatus(napi_env env, napi_callback_info info)
 
 napi_value RunSegmentMapDemo(napi_env env, napi_callback_info info)
 {
+    // 这里实现页面文案里描述的完整流程：
+    // 先按当前 queryType 查询一次，再执行 update，最后再次查询同一区间。
     size_t argc = 8;
     napi_value args[8] = {nullptr};
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
@@ -324,6 +338,7 @@ napi_value RunSegmentMapDemo(napi_env env, napi_callback_info info)
     FAST_SegmentMapHandle handle = nullptr;
     int32_t beforeQuery = 0;
     int32_t afterQuery = 0;
+    // 这一段严格对应 FAST Kit 的典型使用顺序：建配置 -> 设查询类型 -> 设更新类型 -> Create -> Query/Update。
     FAST_ErrorCode code = api.createConfig(&config);
     if (code == FAST_ERROR_CODE_SUCCESS) {
         code = api.setQueryType(config, static_cast<FAST_SegmentMapQueryType>(queryType));
@@ -360,6 +375,7 @@ napi_value RunSegmentMapDemo(napi_env env, napi_callback_info info)
 
 napi_value RunRectPartition(napi_env env, napi_callback_info info)
 {
+    // ArkTS 侧已经把文本输入整理成矩形数组，这里只负责做参数校验并调用 FAST Kit。
     size_t argc = 1;
     napi_value args[1] = {nullptr};
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
@@ -407,6 +423,7 @@ napi_value RunRectPartition(napi_env env, napi_callback_info info)
 
 static napi_value Init(napi_env env, napi_value exports)
 {
+    // 这里导出的函数名需要和 libfastkit.so 的 TypeScript 声明保持一致。
     napi_property_descriptor descriptors[] = {
         { "getEnvironmentStatus", nullptr, GetEnvironmentStatus, nullptr, nullptr, nullptr, napi_default, nullptr },
         { "runSegmentMapDemo", nullptr, RunSegmentMapDemo, nullptr, nullptr, nullptr, napi_default, nullptr },

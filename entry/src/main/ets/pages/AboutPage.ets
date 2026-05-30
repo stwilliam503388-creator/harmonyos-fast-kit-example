@@ -4,6 +4,7 @@ import FastKitService, { FastKitEnvironmentStatus } from '../native/FastKitServi
 @Entry
 @Component
 struct AboutPage {
+  // 关于页用于汇总工程定位、当前能力边界和后续扩展方向。
   @State envStatus: FastKitEnvironmentStatus = FastKitService.getEnvironmentStatus();
 
   aboutToAppear(): void {
@@ -39,6 +40,7 @@ struct AboutPage {
         .borderRadius(16)
 
         Column({ space: 8 }) {
+          // 这里集中说明当前工程到底把 FAST Kit 用到了什么程度，便于快速建立整体认知。
           Text('当前实现范围')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
@@ -62,6 +64,7 @@ struct AboutPage {
         .borderRadius(16)
 
         Column({ space: 8 }) {
+          // 构建与调试说明对应的是当前工程实际采用的 FAST Kit 接入路径。
           Text('构建与调试说明')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)

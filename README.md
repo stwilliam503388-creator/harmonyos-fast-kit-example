@@ -2,6 +2,21 @@
 
 这是一个基于 HarmonyOS `FAST Kit` 真实能力边界搭建的示例工程，目标不是做一个通用 UI Demo，而是把当前设备和 SDK 条件下可验证的 `FAST SegmentMap` 与 `FAST RectPartition` 能力真正接入到 HarmonyOS 应用中，并通过页面把输入、输出和结果解释展示出来。
 
+English summary: A HarmonyOS example app that demonstrates real FAST Kit integration through Native bridges, with a focus on `SegmentMap` and `RectPartition`.
+
+## 仓库亮点
+
+- 不是纯静态页面演示，而是实际打通 ArkTS -> NAPI -> FAST Kit Native 调用链。
+- 重点解释 `FAST_Rect` 的离散网格语义、矩形划分结果来源和 Native 能力边界。
+- 对公开仓库做了敏感信息隔离，默认不提交本地签名配置和构建缓存。
+- 保留 DSP 页面入口，明确展示当前 SDK 能力缺口和后续接入方向。
+
+## 适合谁阅读
+
+- 想了解 HarmonyOS 中如何接 FAST Kit Native 能力的开发者
+- 想核对 `RectPartition` 输入输出语义和页面渲染方式的开发者
+- 想参考 ArkTS + NAPI + `dlopen/dlsym` 动态加载实践的开发者
+
 ## 文档依据
 
 本工程的设计和说明，主要基于以下 FAST Kit 文档语义：
@@ -120,6 +135,7 @@
 - `build-profile.json5` 包含本机签名材料路径和密码，不应提交到公开仓库。
 - 首次拉取工程后，请在本地自行创建并配置 `build-profile.json5`，再使用 DevEco Studio 或 hvigor 构建。
 - 如果缺少本地签名配置，工程源码仍可正常阅读，但无法直接完成安装与运行。
+- `.hvigor/`、`oh_modules/`、`entry/build/`、`entry/.cxx/` 等本地缓存和构建产物已通过 `.gitignore` 排除。
 
 ## 当前限制
 
@@ -136,3 +152,10 @@
   - 当前 `FAST Native 实际输出` 可能为 `4` 个矩形
   - 从离散网格覆盖角度看，该输入可以进一步收敛为 `2` 个矩形：`[3,1,6,5]` 与 `[7,3,8,6]`
 - 这个案例用于提醒：页面展示的是 FAST Kit 当前 native 返回值，不额外强制做“全局最优矩形数”的二次优化。
+
+## 贡献建议
+
+- 提交前优先检查文档描述、页面文案和实际行为是否一致。
+- 若涉及 `RectPartition`，请同时验证坐标列表、原始区域画布和优化结果画布是否一致。
+- 请不要提交本地签名文件、构建缓存或设备相关日志。
+- 如需参与修改，可先阅读 `CONTRIBUTING.md`。
