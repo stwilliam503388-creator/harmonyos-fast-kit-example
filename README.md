@@ -91,6 +91,10 @@ English summary: A HarmonyOS example app that demonstrates real FAST Kit integra
   - 原始区域展示输入坐标与矩形画布。
   - 优化结果展示输出坐标与矩形画布。
   - 页面明确标识结果来源，例如 `FAST Native 实际输出` 或本地预览兜底。
+- 输入校验
+  - 自定义输入会先校验坐标是否为整数、是否满足 `left <= right` 和 `top <= bottom`。
+  - 示例工程要求输入矩形互不重叠，并通过边相邻关系形成连续区域。
+  - 自定义输入最多支持 `32` 个矩形，避免 Native 输出缓冲区容量不可控。
 
 ## Native 接入方式
 
@@ -111,11 +115,13 @@ English summary: A HarmonyOS example app that demonstrates real FAST Kit integra
   - `HMS_FAST_RectPartition_CreateConfig`
   - `HMS_FAST_RectPartition_SetAlgo(config, "SweepLineAlgo")`
   - `HMS_FAST_RectPartition_Solve`
+- Native 层会限制示例输入规模，并按 `max(n * n * 4, 64)` 预分配输出数组。
 
 根据当前 SDK 头文件说明：
 
 - 当前仅支持 `"SweepLineAlgo"`
 - 即使不显式设置，默认算法也是 `"SweepLineAlgo"`
+- `Solve` 要求调用方提前分配足够大的输出数组，官方头文件未给出结果数量上限。
 
 ## 工程结构
 
@@ -143,6 +149,7 @@ English summary: A HarmonyOS example app that demonstrates real FAST Kit integra
 2. 若设备环境未暴露 `libfast_ads.so` 或 `libfast_solver.so`，页面会显示受限说明或本地预览结果，而不是伪造 native 成功。
 3. FAST DSP 能力在当前本机 SDK 中未发现对应 Native 头文件，因此页面只展示说明，不做真实调用。
 4. `RectanglePartitionPage` 中的随机样例是为了方便观察坐标与结果，不代表官方文档提供的标准测试集。
+5. `RectPartition` 输出缓冲区容量采用示例工程内的保守策略，不代表官方推荐上限。
 
 ## 已知案例
 

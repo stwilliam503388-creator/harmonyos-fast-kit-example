@@ -159,8 +159,9 @@ struct RectanglePartitionPage {
   private runDemo(): void {
     // 用户输入先在 ArkTS 层解析成 RectItem[]，再通过 FastKitService 交给 Native 层。
     let origin: RectItem[] = FastKitService.parseRectList(this.rectText);
-    if (origin.length === 0) {
-      this.statusText = '请按 left,top,right,bottom;... 的格式输入矩形。';
+    let validationMessage: string = FastKitService.validateRectPartitionInput(origin);
+    if (validationMessage.length > 0) {
+      this.statusText = validationMessage;
       return;
     }
 

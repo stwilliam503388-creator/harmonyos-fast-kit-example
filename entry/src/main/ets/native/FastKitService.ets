@@ -66,6 +66,7 @@ export class FastKitService {
   // 1. 查询 Native 能力是否可用
   // 2. 调用 SegmentMap / RectPartition
   // 3. 提供页面需要的样例、解析和本地预览逻辑
+  static readonly MAX_RECT_PARTITION_INPUT_COUNT: number = 32;
   static readonly DEFAULT_SEGMENT_DATA: number[] = [2, 1, 3, 4, 5, 6, 7, 8];
   // 官方样例按文档原样保留，便于直接核对输入坐标和输出结果。
   static readonly OFFICIAL_DOC_RECTANGLES: RectItem[] = [
@@ -206,6 +207,85 @@ export class FastKitService {
     return rects.map((item: RectItem): string => {
       return `${item.left},${item.top},${item.right},${item.bottom}`;
     }).join(';');
+  }
+
+  static validateRectPartitionInput(rects: RectItem[]): string {
+    if (rects.length === 0) {
+      return '请至少输入 1 个矩形。';
+    }
+    if (rects.length > FastKitService.MAX_RECT_PARTITION_INPUT_COUNT) {
+      return `示例工程最多支持 ${FastKitService.MAX_RECT_PARTITION_INPUT_COUNT} 个输入矩形，避免 Native 输出缓冲区不足。`;
+    }
+
+    for (let index = 0; index < rects.length; index++) {
+      let item: RectItem = rects[index];
+      if (!FastKitService.isIntegerRect(item)) {
+        return `第 ${index + 1} 个矩形坐标必须都是整数。`;
+      }
+      if (item.left > item.right || item.top > item.bottom) {
+        return `第 ${index + 1} 个矩形必须满足 left <= right 且 top <= bottom。`;
+      }
+    }
+
+    for (let index = 0; index < rects.length; index++) {
+      for (let next = index + 1; next < rects.length; next++) {
+        if (FastKitService.isRectOverlapping(rects[index], rects[next])) {
+          return `第 ${index + 1} 个矩形与第 ${next + 1} 个矩形存在重叠单元格，请输入互不重叠的矩形。`;
+        }
+      }
+    }
+
+    if (!FastKitService.isConnectedRectSet(rects)) {
+      return '输入矩形需要形成连续区域；请确保每个新增矩形都能通过边相邻关系连接到整体区域。';
+    }
+    return '';
+  }
+
+  private static isIntegerRect(item: RectItem): boolean {
+    return Math.floor(item.left) === item.left &&
+      Math.floor(item.top) === item.top &&
+      Math.floor(item.right) === item.right &&
+      Math.floor(item.bottom) === item.bottom;
+  }
+
+  private static isRectOverlapping(first: RectItem, second: RectItem): boolean {
+    return first.left <= second.right &&
+      first.right >= second.left &&
+      first.top <= second.bottom &&
+      first.bottom >= second.top;
+  }
+
+  private static isRectEdgeAdjacent(first: RectItem, second: RectItem): boolean {
+    let verticalOverlap: boolean = first.top <= second.bottom && first.bottom >= second.top;
+    let horizontalOverlap: boolean = first.left <= second.right && first.right >= second.left;
+    let horizontalTouch: boolean = first.right + 1 === second.left || second.right + 1 === first.left;
+    let verticalTouch: boolean = first.bottom + 1 === second.top || second.bottom + 1 === first.top;
+    return (horizontalTouch && verticalOverlap) || (verticalTouch && horizontalOverlap);
+  }
+
+  private static isConnectedRectSet(rects: RectItem[]): boolean {
+    if (rects.length <= 1) {
+      return true;
+    }
+
+    let visited: boolean[] = rects.map((): boolean => false);
+    let queue: number[] = [0];
+    visited[0] = true;
+
+    while (queue.length > 0) {
+      let current: number | undefined = queue.shift();
+      if (current === undefined) {
+        continue;
+      }
+      for (let index = 0; index < rects.length; index++) {
+        if (!visited[index] && FastKitService.isRectEdgeAdjacent(rects[current], rects[index])) {
+          visited[index] = true;
+          queue.push(index);
+        }
+      }
+    }
+
+    return visited.every((item: boolean): boolean => item);
   }
 
   static generateRandomGridRectangles(count: number): RectItem[] {
