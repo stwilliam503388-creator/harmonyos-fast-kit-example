@@ -29,6 +29,8 @@ using RectDestroyConfigFn = void (*)(FAST_RectPartitionConfig*);
 using RectSetAlgoFn = FAST_ErrorCode (*)(FAST_RectPartitionConfig*, const char*);
 using RectSolveFn = FAST_ErrorCode (*)(FAST_RectPartitionConfig*, size_t, const FAST_Rect*, FAST_Rect*, size_t*);
 
+constexpr size_t MAX_RECT_PARTITION_INPUT_COUNT = 32;
+
 struct SegmentApi {
     void* lib = nullptr;
     SegmentCreateConfigFn createConfig = nullptr;
@@ -385,6 +387,10 @@ napi_value RunRectPartition(napi_env env, napi_callback_info info)
     if (argc < 1 || !GetRectArray(env, args[0], input, error)) {
         return CreateRectResult(env, false, false, FAST_ERROR_CODE_ILLEGAL_INPUT, error, 0, 0, {});
     }
+    if (input.empty() || input.size() > MAX_RECT_PARTITION_INPUT_COUNT) {
+        return CreateRectResult(env, false, false, FAST_ERROR_CODE_ILLEGAL_INPUT,
+            "RectPartition demo supports 1 to 32 input rectangles.", input.size(), 0, {});
+    }
 
     RectApi api = LoadRectApi();
     if (api.lib == nullptr) {
@@ -398,8 +404,9 @@ napi_value RunRectPartition(napi_env env, napi_callback_info info)
         code = api.setAlgo(config, "SweepLineAlgo");
     }
 
-    // Solve 会把结果写入调用方提供的缓冲区，所以这里先预留一个相对充足的输出空间。
-    std::vector<FAST_Rect> output(std::max<size_t>(input.size() * 8, 32));
+    // Solve 会把结果写入调用方提供的缓冲区。文档未给出结果数量上限，
+    // 示例工程在限制输入规模的前提下使用 n^2 * 4 的保守容量，降低溢出风险。
+    std::vector<FAST_Rect> output(std::max<size_t>(input.size() * input.size() * 4, 64));
     size_t resultSize = output.size();
     if (code == FAST_ERROR_CODE_SUCCESS) {
         code = api.solve(config, input.size(), input.data(), output.data(), &resultSize);
