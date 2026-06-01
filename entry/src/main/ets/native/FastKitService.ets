@@ -172,6 +172,19 @@ export class FastKitService {
     }
   }
 
+  static transposeRect(item: RectItem): RectItem {
+    return {
+      left: item.top,
+      top: item.left,
+      right: item.bottom,
+      bottom: item.right
+    };
+  }
+
+  static transposeRects(rects: RectItem[]): RectItem[] {
+    return rects.map((item: RectItem): RectItem => FastKitService.transposeRect(item));
+  }
+
   static parseNumberList(text: string): number[] {
     // 允许用户输入中存在空格或空片段，只提取能成功转成数字的内容。
     let parts: string[] = text.split(',');
@@ -518,11 +531,26 @@ export class FastKitService {
       };
     }
 
-    return rects.sort((a: RectItem, b: RectItem): number => {
+    let validRects: RectItem[] = FastKitService.validateRectPartitionInput(rects).length === 0 ?
+      rects : FastKitService.buildFullSlotRects(selected, slots);
+
+    return validRects.sort((a: RectItem, b: RectItem): number => {
       if (a.top !== b.top) {
         return a.top - b.top;
       }
       return a.left - b.left;
+    });
+  }
+
+  private static buildFullSlotRects(selected: number[], slots: RectSlot[]): RectItem[] {
+    return selected.map((slotIndex: number): RectItem => {
+      let slot: RectSlot = slots[slotIndex];
+      return {
+        left: slot.left,
+        top: slot.top,
+        right: slot.right,
+        bottom: slot.bottom
+      };
     });
   }
 
