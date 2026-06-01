@@ -92,6 +92,7 @@ English summary: A HarmonyOS example app that demonstrates real FAST Kit integra
   - 优化结果展示输出坐标与矩形画布。
   - 页面明确标识结果来源，例如 `FAST Native 实际输出` 或本地预览兜底。
   - 随机规则网格样例会额外执行一次横纵坐标交换后的 `RectPartition`，若第二次输出矩形数更少，则将结果坐标交换回原方向后展示。
+  - 对小范围网格，页面会在 FAST 候选结果之外做本地最少矩形后处理；如果本地结果更少，会明确标记为 `本地最少矩形后处理`。
 - 输入校验
   - 自定义输入会先校验坐标是否为整数、是否满足 `left <= right` 和 `top <= bottom`。
   - 示例工程要求输入矩形互不重叠，并通过边相邻关系形成连续区域。

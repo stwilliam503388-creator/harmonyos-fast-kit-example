@@ -182,6 +182,7 @@ struct RectanglePartitionPage {
 
     let result: RectPartitionResult = FastKitService.runRectPartition(origin);
     let nativeRects: RectItem[] = this.nativeArraysToRects(result.optimizedRects);
+    let nativeCandidateCount: number = nativeRects.length;
     let resultSourceLabel: string = 'FAST Native 实际输出';
     let resultSourceDetail: string = '当前页面展示的是 Native 层返回的矩形划分结果。';
     if (this.shouldRunTransposedOptimization()) {
@@ -194,11 +195,19 @@ struct RectanglePartitionPage {
       if (secondUsable && (!firstUsable || transposedRects.length < nativeRects.length)) {
         result = transposedResult;
         nativeRects = transposedRects;
+        nativeCandidateCount = transposedRects.length;
         resultSourceLabel = 'FAST Native 横纵交换后输出';
         resultSourceDetail = '当前结果来自横纵坐标交换后的第二次 FAST RectPartition，坐标已交换回原方向展示。';
       }
     }
-    let fallbackRects: RectItem[] = FastKitService.mergeAdjacentRects(origin);
+    let fallbackRects: RectItem[] = FastKitService.optimizeRectPartitionLocally(origin);
+    if (result.success && nativeRects.length > 0 && fallbackRects.length > 0 &&
+      fallbackRects.length < nativeRects.length) {
+      nativeRects = fallbackRects.slice();
+      resultSourceLabel = '本地最少矩形后处理';
+      resultSourceDetail =
+        `FAST Native 候选结果为 ${nativeCandidateCount} 个矩形；页面对小网格做本地精确后处理后展示 ${nativeRects.length} 个矩形。`;
+    }
 
     this.originRects = origin.slice();
     this.originCount = origin.length;
@@ -210,7 +219,9 @@ struct RectanglePartitionPage {
       this.outputCount = nativeRects.length;
       this.resultSourceLabel = resultSourceLabel;
       this.resultSourceDetail = resultSourceDetail;
-      this.statusText = `${result.message} 输入 ${origin.length} 个矩形，输出 ${nativeRects.length} 个矩形。`;
+      this.statusText = resultSourceLabel === '本地最少矩形后处理' ?
+        `${result.message} 输入 ${origin.length} 个矩形，FAST Native 候选 ${nativeCandidateCount} 个矩形，本地后处理输出 ${nativeRects.length} 个矩形。` :
+        `${result.message} 输入 ${origin.length} 个矩形，输出 ${nativeRects.length} 个矩形。`;
     } else {
       if (this.expectedRects.length > 0) {
         // 官方样例在 Native 不可用时优先回退到文档期望值，方便做语义对照。
