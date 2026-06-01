@@ -61,6 +61,12 @@ interface FrontierScore {
   score: number;
 }
 
+interface RectCandidate {
+  rect: RectItem;
+  cells: string[];
+  area: number;
+}
+
 export class FastKitService {
   // FastKitService 统一封装 ArkTS 侧对 FAST Kit 的使用方式：
   // 1. 查询 Native 能力是否可用
@@ -552,6 +558,154 @@ export class FastKitService {
         bottom: slot.bottom
       };
     });
+  }
+
+  static optimizeRectPartitionLocally(rects: RectItem[]): RectItem[] {
+    // FAST RectPartition 返回合法划分但不承诺全局最少；这里仅对小网格做本地精确后处理。
+    let exactRects: RectItem[] = FastKitService.findExactMinimumRects(rects);
+    return exactRects.length > 0 ? exactRects : FastKitService.mergeAdjacentRects(rects);
+  }
+
+  private static findExactMinimumRects(rects: RectItem[]): RectItem[] {
+    if (rects.length === 0) {
+      return [];
+    }
+
+    let cellSet: Set<string> = new Set();
+    let minLeft: number = rects[0].left;
+    let minTop: number = rects[0].top;
+    let maxRight: number = rects[0].right;
+    let maxBottom: number = rects[0].bottom;
+    rects.forEach((item: RectItem) => {
+      minLeft = Math.min(minLeft, item.left);
+      minTop = Math.min(minTop, item.top);
+      maxRight = Math.max(maxRight, item.right);
+      maxBottom = Math.max(maxBottom, item.bottom);
+      for (let x = item.left; x <= item.right; x++) {
+        for (let y = item.top; y <= item.bottom; y++) {
+          cellSet.add(FastKitService.getCellKey(x, y));
+        }
+      }
+    });
+
+    let cellCount: number = cellSet.size;
+    let boundsArea: number = (maxRight - minLeft + 1) * (maxBottom - minTop + 1);
+    if (cellCount === 0 || cellCount > 96 || boundsArea > 144) {
+      return [];
+    }
+
+    let candidates: RectCandidate[] =
+      FastKitService.buildCoveredRectCandidates(cellSet, minLeft, minTop, maxRight, maxBottom);
+    if (candidates.length === 0) {
+      return [];
+    }
+
+    let candidatesByCell: Map<string, RectCandidate[]> = new Map();
+    let allCells: string[] = Array.from(cellSet);
+    allCells.forEach((key: string) => {
+      candidatesByCell.set(key, []);
+    });
+    candidates.forEach((candidate: RectCandidate) => {
+      candidate.cells.forEach((key: string) => {
+        let related: RectCandidate[] | undefined = candidatesByCell.get(key);
+        if (related) {
+          related.push(candidate);
+        }
+      });
+    });
+
+    let bestRects: RectItem[] = FastKitService.mergeAdjacentRects(rects);
+    if (bestRects.length === 0) {
+      bestRects = rects.slice();
+    }
+    FastKitService.searchMinimumRects(allCells, candidatesByCell, [], bestRects);
+    return bestRects;
+  }
+
+  private static buildCoveredRectCandidates(cellSet: Set<string>, minLeft: number, minTop: number,
+    maxRight: number, maxBottom: number): RectCandidate[] {
+    let candidates: RectCandidate[] = [];
+    for (let left = minLeft; left <= maxRight; left++) {
+      for (let top = minTop; top <= maxBottom; top++) {
+        for (let right = left; right <= maxRight; right++) {
+          for (let bottom = top; bottom <= maxBottom; bottom++) {
+            let cells: string[] = FastKitService.collectCoveredCells(cellSet, left, top, right, bottom);
+            if (cells.length > 0) {
+              candidates.push({
+                rect: { left, top, right, bottom },
+                cells,
+                area: cells.length
+              });
+            }
+          }
+        }
+      }
+    }
+    return candidates.sort((first: RectCandidate, second: RectCandidate): number => second.area - first.area);
+  }
+
+  private static collectCoveredCells(cellSet: Set<string>, left: number, top: number,
+    right: number, bottom: number): string[] {
+    let cells: string[] = [];
+    for (let x = left; x <= right; x++) {
+      for (let y = top; y <= bottom; y++) {
+        let key: string = FastKitService.getCellKey(x, y);
+        if (!cellSet.has(key)) {
+          return [];
+        }
+        cells.push(key);
+      }
+    }
+    return cells;
+  }
+
+  private static searchMinimumRects(remainingCells: string[], candidatesByCell: Map<string, RectCandidate[]>,
+    selectedRects: RectItem[], bestRects: RectItem[]): void {
+    if (remainingCells.length === 0) {
+      bestRects.splice(0, bestRects.length);
+      selectedRects.forEach((item: RectItem) => {
+        bestRects.push({
+          left: item.left,
+          top: item.top,
+          right: item.right,
+          bottom: item.bottom
+        });
+      });
+      return;
+    }
+    if (selectedRects.length >= bestRects.length) {
+      return;
+    }
+
+    let remainingSet: Set<string> = new Set(remainingCells);
+    let pivotCandidates: RectCandidate[] = [];
+    remainingCells.forEach((key: string) => {
+      let related: RectCandidate[] = candidatesByCell.get(key) || [];
+      let available: RectCandidate[] = related.filter((candidate: RectCandidate): boolean => {
+        return FastKitService.isCandidateInsideRemaining(candidate, remainingSet);
+      });
+      if (pivotCandidates.length === 0 || available.length < pivotCandidates.length) {
+        pivotCandidates = available;
+      }
+    });
+
+    for (let index = 0; index < pivotCandidates.length; index++) {
+      let candidate: RectCandidate = pivotCandidates[index];
+      selectedRects.push(candidate.rect);
+      let nextRemaining: string[] = remainingCells.filter((key: string): boolean => {
+        return candidate.cells.indexOf(key) < 0;
+      });
+      FastKitService.searchMinimumRects(nextRemaining, candidatesByCell, selectedRects, bestRects);
+      selectedRects.pop();
+    }
+  }
+
+  private static isCandidateInsideRemaining(candidate: RectCandidate, remainingSet: Set<string>): boolean {
+    return candidate.cells.every((key: string): boolean => remainingSet.has(key));
+  }
+
+  private static getCellKey(x: number, y: number): string {
+    return `${x},${y}`;
   }
 
   static mergeAdjacentRects(rects: RectItem[]): RectItem[] {
