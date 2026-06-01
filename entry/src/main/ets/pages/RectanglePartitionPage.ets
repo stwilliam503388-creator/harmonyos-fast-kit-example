@@ -156,6 +156,21 @@ struct RectanglePartitionPage {
     return FastKitService.DEFAULT_RECTANGLES;
   }
 
+  private nativeArraysToRects(items: Array<Array<number>>): RectItem[] {
+    return items.map((item: Array<number>): RectItem => {
+      return {
+        left: item[0],
+        top: item[1],
+        right: item[2],
+        bottom: item[3]
+      };
+    });
+  }
+
+  private shouldRunTransposedOptimization(): boolean {
+    return this.expectedRects.length === 0;
+  }
+
   private runDemo(): void {
     // 用户输入先在 ArkTS 层解析成 RectItem[]，再通过 FastKitService 交给 Native 层。
     let origin: RectItem[] = FastKitService.parseRectList(this.rectText);
@@ -166,14 +181,23 @@ struct RectanglePartitionPage {
     }
 
     let result: RectPartitionResult = FastKitService.runRectPartition(origin);
-    let nativeRects: RectItem[] = result.optimizedRects.map((item: Array<number>): RectItem => {
-      return {
-        left: item[0],
-        top: item[1],
-        right: item[2],
-        bottom: item[3]
-      };
-    });
+    let nativeRects: RectItem[] = this.nativeArraysToRects(result.optimizedRects);
+    let resultSourceLabel: string = 'FAST Native 实际输出';
+    let resultSourceDetail: string = '当前页面展示的是 Native 层返回的矩形划分结果。';
+    if (this.shouldRunTransposedOptimization()) {
+      let transposedResult: RectPartitionResult =
+        FastKitService.runRectPartition(FastKitService.transposeRects(origin));
+      let transposedRects: RectItem[] =
+        FastKitService.transposeRects(this.nativeArraysToRects(transposedResult.optimizedRects));
+      let firstUsable: boolean = result.success && nativeRects.length > 0;
+      let secondUsable: boolean = transposedResult.success && transposedRects.length > 0;
+      if (secondUsable && (!firstUsable || transposedRects.length < nativeRects.length)) {
+        result = transposedResult;
+        nativeRects = transposedRects;
+        resultSourceLabel = 'FAST Native 横纵交换后输出';
+        resultSourceDetail = '当前结果来自横纵坐标交换后的第二次 FAST RectPartition，坐标已交换回原方向展示。';
+      }
+    }
     let fallbackRects: RectItem[] = FastKitService.mergeAdjacentRects(origin);
 
     this.originRects = origin.slice();
@@ -183,10 +207,10 @@ struct RectanglePartitionPage {
     if (result.success && nativeRects.length > 0) {
       this.resultRects = nativeRects.slice();
       this.resultDrawSpecs = this.buildDrawSpecs(nativeRects, nativeRects, `result-grid-${this.resultRenderToken + 1}`);
-      this.outputCount = result.outputCount;
-      this.resultSourceLabel = 'FAST Native 实际输出';
-      this.resultSourceDetail = '当前页面展示的是 Native 层返回的矩形划分结果。';
-      this.statusText = `${result.message} 输入 ${result.inputCount} 个矩形，输出 ${result.outputCount} 个矩形。`;
+      this.outputCount = nativeRects.length;
+      this.resultSourceLabel = resultSourceLabel;
+      this.resultSourceDetail = resultSourceDetail;
+      this.statusText = `${result.message} 输入 ${origin.length} 个矩形，输出 ${nativeRects.length} 个矩形。`;
     } else {
       if (this.expectedRects.length > 0) {
         // 官方样例在 Native 不可用时优先回退到文档期望值，方便做语义对照。
@@ -695,7 +719,12 @@ struct RectanglePartitionPage {
     TextInput({ text: this.rectText, placeholder: this.getCurrentSampleText() })
       .width('100%')
       .onChange((value: string) => {
+        let isUserEdit: boolean = value !== this.rectText;
         this.rectText = value;
+        if (isUserEdit) {
+          this.activeSampleKey = 'custom';
+          this.expectedRects = [];
+        }
       })
   }
 
