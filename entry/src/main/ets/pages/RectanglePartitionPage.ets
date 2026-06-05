@@ -113,11 +113,8 @@ struct RectanglePartitionPage {
   }
 
   private generateRandomGridRects(): void {
-    let count: number = Number(this.gridRandomCountText.trim());
-    if (isNaN(count) || count < 4 || count > 15) {
-      this.statusText = '请输入 4 到 15 之间的矩形数量，以保证生成结果中有足够多的相邻矩形。';
-      return;
-    }
+    let count: number = this.normalizeGridRandomCount(this.gridRandomCountText);
+    this.gridRandomCountText = `${count}`;
     let rects: RectItem[] = FastKitService.generateRandomGridRectangles(count);
     // 随机生成的规则网格样例，后续仍然复用“输入 -> 执行 -> 绘制结果”这一整条链路。
     this.activeSampleKey = 'grid';
@@ -134,6 +131,38 @@ struct RectanglePartitionPage {
     this.statusText = `已随机生成 ${rects.length} 个不重叠矩形，整体坐标范围固定在 8 x 8 内，并保证至少存在相邻矩形。`;
     this.resultRenderToken = 0;
     this.sampleRenderToken = this.sampleRenderToken + 1;
+  }
+
+  private normalizeGridRandomCount(value: string): number {
+    let count: number = Number(value.trim());
+    if (isNaN(count)) {
+      return 4;
+    }
+    return Math.max(4, Math.min(15, Math.floor(count)));
+  }
+
+  private updateGridRandomCountText(value: string): void {
+    // 数量输入只允许数字，并在超出上限时立即回写到可用范围。
+    let digits: string = value.replace(/[^0-9]/g, '');
+    if (digits.length > 2) {
+      digits = digits.substring(0, 2);
+    }
+    if (digits.length === 0) {
+      this.gridRandomCountText = '';
+      this.statusText = '请输入 4 到 15 之间的矩形数量。';
+      return;
+    }
+
+    let count: number = Number(digits);
+    if (count > 15) {
+      this.gridRandomCountText = '15';
+      this.statusText = '矩形数量最多支持 15 个，已自动修正。';
+      return;
+    }
+    this.gridRandomCountText = digits;
+    if (count < 4) {
+      this.statusText = '矩形数量最少为 4 个，点击生成时会自动修正为 4。';
+    }
   }
 
   private getActiveSample(): RectSampleSet {
@@ -729,6 +758,9 @@ struct RectanglePartitionPage {
   private renderRectInput() {
     TextInput({ text: this.rectText, placeholder: this.getCurrentSampleText() })
       .width('100%')
+      .fontColor('#1F2937')
+      .placeholderColor('#999999')
+      .backgroundColor('#F5F7FA')
       .onChange((value: string) => {
         let isUserEdit: boolean = value !== this.rectText;
         this.rectText = value;
@@ -745,6 +777,7 @@ struct RectanglePartitionPage {
       Text('规则网格随机生成')
         .fontSize(16)
         .fontWeight(FontWeight.Medium)
+        .fontColor('#111827')
         .width('100%')
       Text('输入 4 到 15 之间的数量，随机生成不重叠、宽高不超过 8、且整体范围固定在 8 x 8 内的初始矩形，并保证至少存在相邻贴边矩形。')
         .fontSize(12)
@@ -753,8 +786,11 @@ struct RectanglePartitionPage {
       Row({ space: 12 }) {
         TextInput({ text: this.gridRandomCountText, placeholder: '请输入 4-15' })
           .layoutWeight(1)
+          .fontColor('#1F2937')
+          .placeholderColor('#999999')
+          .backgroundColor('#F5F7FA')
           .onChange((value: string) => {
-            this.gridRandomCountText = value;
+            this.updateGridRandomCountText(value);
           })
         Button('随机生成矩形')
           .onClick(() => {
@@ -780,6 +816,7 @@ struct RectanglePartitionPage {
         Text('矩形划分演示')
           .fontSize(26)
           .fontWeight(FontWeight.Bold)
+          .fontColor('#111827')
           .width('100%')
 
         Text('真实调用 FAST RectPartition Native API，对默认矩形区域进行划分优化。页面会同时展示输入矩形和输出矩形的数量对比。')
@@ -796,6 +833,7 @@ struct RectanglePartitionPage {
           Text('文档说明')
             .fontSize(16)
             .fontWeight(FontWeight.Medium)
+            .fontColor('#111827')
             .width('100%')
           Text('根据 FAST_Rect 与 RectPartition 文档，矩形表示二维网格内满足坐标条件的单元矩形集合。X 轴从左到右递增，Y 轴从上到下递增。')
             .fontSize(12)
@@ -825,6 +863,7 @@ struct RectanglePartitionPage {
           Text('快捷样例')
             .fontSize(16)
             .fontWeight(FontWeight.Medium)
+            .fontColor('#111827')
             .width('100%')
           Text(`${this.getActiveSample().title}：${this.getActiveSample().description}`)
             .fontSize(13)
@@ -849,6 +888,7 @@ struct RectanglePartitionPage {
           Text('矩形样例（多个矩形用分号隔开）')
             .fontSize(16)
             .fontWeight(FontWeight.Medium)
+            .fontColor('#111827')
             .width('100%')
           Text(`当前样例坐标: ${this.getCurrentSampleText()}`)
             .fontSize(13)
@@ -883,9 +923,11 @@ struct RectanglePartitionPage {
           Text('原始区域')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
+            .fontColor('#111827')
             .width('100%')
           Text(`原始矩形数量: ${this.originCount}`)
             .fontSize(14)
+            .fontColor('#374151')
             .width('100%')
           this.renderOriginPreview()
           Text(FastKitService.rectListToText(this.originRects))
@@ -913,6 +955,7 @@ struct RectanglePartitionPage {
           Text('优化结果')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
+            .fontColor('#111827')
             .width('100%')
           Text('说明：FAST Native 返回的是合法划分结果，但不保证一定是全局最少矩形数。')
             .fontSize(12)
@@ -930,6 +973,7 @@ struct RectanglePartitionPage {
             .width('100%')
           Text(`输出矩形数量: ${this.outputCount}`)
             .fontSize(14)
+            .fontColor('#374151')
             .width('100%')
           this.renderResultPreview()
           if (this.resultRects.length > 0) {
