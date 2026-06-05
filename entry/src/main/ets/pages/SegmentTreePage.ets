@@ -100,6 +100,7 @@ struct SegmentTreePage {
         Text('线段表演示')
           .fontSize(26)
           .fontWeight(FontWeight.Bold)
+          .fontColor('#111827')
           .width('100%')
 
         Text('真实调用 FAST SegmentMap Native API。当前页面会先查询一次区间结果，再执行一次区间更新，最后再次查询同一区间。')
@@ -116,9 +117,13 @@ struct SegmentTreePage {
           Text('数组样例（逗号分隔）')
             .fontSize(16)
             .fontWeight(FontWeight.Medium)
+            .fontColor('#111827')
             .width('100%')
           TextInput({ text: this.dataText, placeholder: '2,1,3,4,5,6,7,8' })
             .width('100%')
+            .fontColor('#1F2937')
+            .placeholderColor('#999999')
+            .backgroundColor('#F5F7FA')
             .onChange((value: string) => {
               this.dataText = value;
             })
@@ -132,6 +137,7 @@ struct SegmentTreePage {
           Text(`查询类型: ${this.queryTypeLabel()}`)
             .fontSize(16)
             .fontWeight(FontWeight.Medium)
+            .fontColor('#111827')
             .width('100%')
           Row({ space: 8 }) {
             Button('求和').onClick(() => {
@@ -154,6 +160,7 @@ struct SegmentTreePage {
           Text(`更新类型: ${this.updateTypeLabel()}`)
             .fontSize(16)
             .fontWeight(FontWeight.Medium)
+            .fontColor('#111827')
             .width('100%')
           Row({ space: 8 }) {
             Button('设值').onClick(() => {
@@ -169,16 +176,25 @@ struct SegmentTreePage {
           Row({ space: 8 }) {
             TextInput({ text: this.updateLeftText, placeholder: '更新左边界' })
               .layoutWeight(1)
+              .fontColor('#1F2937')
+              .placeholderColor('#999999')
+              .backgroundColor('#F5F7FA')
               .onChange((value: string) => {
                 this.updateLeftText = value;
               })
             TextInput({ text: this.updateRightText, placeholder: '更新右边界' })
               .layoutWeight(1)
+              .fontColor('#1F2937')
+              .placeholderColor('#999999')
+              .backgroundColor('#F5F7FA')
               .onChange((value: string) => {
                 this.updateRightText = value;
               })
             TextInput({ text: this.updateValueText, placeholder: '更新值' })
               .layoutWeight(1)
+              .fontColor('#1F2937')
+              .placeholderColor('#999999')
+              .backgroundColor('#F5F7FA')
               .onChange((value: string) => {
                 this.updateValueText = value;
               })
@@ -193,15 +209,22 @@ struct SegmentTreePage {
           Text('查询区间 [left, right)')
             .fontSize(16)
             .fontWeight(FontWeight.Medium)
+            .fontColor('#111827')
             .width('100%')
           Row({ space: 8 }) {
             TextInput({ text: this.queryLeftText, placeholder: '查询左边界' })
               .layoutWeight(1)
+              .fontColor('#1F2937')
+              .placeholderColor('#999999')
+              .backgroundColor('#F5F7FA')
               .onChange((value: string) => {
                 this.queryLeftText = value;
               })
             TextInput({ text: this.queryRightText, placeholder: '查询右边界' })
               .layoutWeight(1)
+              .fontColor('#1F2937')
+              .placeholderColor('#999999')
+              .backgroundColor('#F5F7FA')
               .onChange((value: string) => {
                 this.queryRightText = value;
               })
@@ -230,15 +253,19 @@ struct SegmentTreePage {
           Text('结果')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
+            .fontColor('#111827')
             .width('100%')
           Text(`更新前查询结果: ${this.beforeResult}`)
             .fontSize(15)
+            .fontColor('#374151')
             .width('100%')
           Text(`更新后查询结果: ${this.afterResult}`)
             .fontSize(15)
+            .fontColor('#374151')
             .width('100%')
           Text(`更新后数组预览: ${this.previewArray}`)
             .fontSize(15)
+            .fontColor('#374151')
             .width('100%')
           Text(`执行说明: ${this.statusText}`)
             .fontSize(14)
